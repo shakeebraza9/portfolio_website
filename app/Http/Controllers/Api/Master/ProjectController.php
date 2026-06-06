@@ -13,14 +13,20 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $length = $request->input('length', 50);
-        $page   = $request->input('page', 1);
-        $offset = ($page - 1) * $length;
-        $query = Project::query()->with('galleries');
+        $length = (int) $request->input('length', 10);
+        $page   = (int) $request->input('page', 1);
+
+        $length = $length > 0 ? $length : 10;
+        $page   = $page > 0 ? $page : 1;
+
+        $query = Project::with('galleries');
+
+        // 🔍 Search
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
+        // 🔎 Filters
         if ($request->filled('id')) {
             $query->where('id', $request->id);
         }
@@ -28,22 +34,18 @@ class ProjectController extends Controller
         if ($request->filled('author')) {
             $query->where('author', $request->author);
         }
-        $count = (clone $query)->count();
-        $data = $query
-            ->orderByDesc('id')
-            ->skip($offset)
-            ->take($length)
-            ->get()
-            ->map(function ($item) {
-                return $item;
-            });
+
+        // 🚀 Laravel pagination (BEST WAY)
+        $paginator = $query->orderByDesc('id')
+            ->paginate($length, ['*'], 'page', $page);
+
         return response()->json([
-            'recordsTotal' => $count,
-            'recordsFiltered' => $count,
-            'page' => $page,
-            'offset' => $offset,
-            'last_page' => ceil($count / $length),
-            'data' => $data,
+            'recordsTotal' => Project::count(), // total without filter
+            'recordsFiltered' => $paginator->total(), // filtered count
+            'page' => $paginator->currentPage(),
+            'length' => $paginator->perPage(),
+            'last_page' => $paginator->lastPage(),
+            'data' => $paginator->items(),
         ]);
     }
 

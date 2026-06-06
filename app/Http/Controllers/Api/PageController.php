@@ -57,43 +57,47 @@ class PageController extends Controller
 
 
     }
-    public function projectForm(Request $request)
-    {
+public function projectForm(Request $request)
+{
+    $length = (int) $request->input('length', 10);
+    $page   = (int) $request->input('page', 1);
 
-        $length = (int) $request->input('length', 10); 
-        $page   = (int) $request->input('page', 1);
+    $length = $length > 0 ? $length : 10;
+    $page   = $page > 0 ? $page : 1;
 
-        $length = $length > 0 ? $length : 10;
-        $page   = $page > 0 ? $page : 1;
+    $offset = ($page - 1) * $length;
 
-        $offset = ($page - 1) * $length;
+    $query = Project::with('galleries');
 
-        $query = Project::query()->with('galleries');
+    // 🔍 Search
+    $query->when($request->search, function ($q) use ($request) {
+        $q->where('name', 'like', '%' . $request->search . '%');
+    });
 
-        // 🔍 Search
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-        $count = (clone $query)->count();
+    // 🔎 Filters
+    $query->when($request->id, fn($q) => $q->where('id', $request->id));
+    $query->when($request->author, fn($q) => $q->where('author', $request->author));
 
+    // 📊 Count (filtered)
+    $count = (clone $query)->count();
 
-        $data = $query
-            ->orderByDesc('date')
-            ->skip($offset)
-            ->take($length)
-            ->get();
-  
+    // 📦 Data
+    $data = $query
+        ->orderByDesc('date')   // IMPORTANT: order BEFORE pagination logic
+        ->skip($offset)
+        ->take($length)
+        ->get();
 
-        return response()->json([
-            'recordsTotal' => $count,
-            'recordsFiltered' => $count,
-            'page' => $page,
-            'length' => $length,
-            'offset' => $offset,
-            'last_page' => ceil($count / $length),
-            'data' => $data,
-        ]);
-    }
+    return response()->json([
+        'recordsTotal' => Project::count(),
+        'recordsFiltered' => $count,
+        'page' => $page,
+        'length' => $length,
+        'offset' => $offset,
+        'last_page' => ceil($count / $length),
+        'data' => $data,
+    ]);
+}
 
     public function singleProject($slug)
 {
