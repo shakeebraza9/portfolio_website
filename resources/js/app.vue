@@ -4,7 +4,7 @@
 </template>
 
 <script>
-import Alert from '@/components/Alert.vue' // path check kar lo
+import Alert from '@/components/Alert.vue' 
 export default {
   components: {
     Alert,
