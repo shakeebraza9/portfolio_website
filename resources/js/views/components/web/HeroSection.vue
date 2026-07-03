@@ -109,14 +109,14 @@
     },
 
     methods: {
-      // 1. CV Download Logic
+
       downloadCV() {
-        const cvPath = this.globalStore.getSetting('cv_url'); // Database mein key 'cv_url' honi chahiye
+        const cvPath = this.globalStore.getSetting('cv_url'); 
         if (cvPath) {
           const link = document.createElement('a');
           link.href = cvPath;
-          link.setAttribute('download', 'Muhammad_shakeeb_raza.pdf'); // Browser ko download force karne ke liye
-          link.setAttribute('target', '_blank'); // Backup agar download na ho to naye tab mein khule
+          link.setAttribute('download', 'Muhammad_shakeeb_raza.pdf'); 
+          link.setAttribute('target', '_blank'); 
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
